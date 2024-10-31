@@ -1,21 +1,21 @@
-import React from 'react';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-import { worker } from './mocks';
+import React from "react";
+import "./index.css";
+import App from "./App";
+import reportWebVitals from "./reportWebVitals";
+import { worker } from "./mocks";
 
-import { createRoot } from 'react-dom/client';
-const container = document.getElementById('app');
+import { createRoot } from "react-dom/client";
+const container = document.getElementById("app");
 const root = createRoot(container!);
 root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
 );
 
 // Start a mock API server to handle auth requests
 worker.start({
-  onUnhandledRequest: 'bypass',
+  onUnhandledRequest: "bypass",
 });
 
 // If you want to start measuring performance in your app, pass a function

@@ -1,10 +1,9 @@
-import Button from './Button';
+import Button from "./Button";
 
-describe('Button', () => {
-  it('should mount', () => {
+describe("Button", () => {
+  it("should mount", () => {
     cy.mount(<Button>Click Me</Button>);
 
-    cy.get('button').contains('Click Me');
+    cy.get("button").contains("Click Me");
   });
-
 });

@@ -23,7 +23,12 @@
     "build": "react-scripts build",
     "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject",
-    "cypress:run": "cypress run --config video=false --component"
+    "cypress:run": "cypress run --config video=false --component",
+    "lint": "eslint src --ext js,ts,tsx",
+    "lint:fix": "eslint --fix --ext .js,.ts,.tsx .",
+    "tsc:src": "tsc --project tsconfig.json --noEmit",
+    "prettier:fix": "prettier --write .",
+    "prettier:check": "prettier --check ."
   },
   "eslintConfig": {
     "extends": [
@@ -45,6 +50,15 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.4",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-webpack-plugin": "^4.2.0",
     "postcss": "^8.4.12",
     "tailwindcss": "^3.0.24"
   },
