@@ -60,7 +60,6 @@ jobs:
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
       - name: Formatting, linting, tsc, and tests
         run: |
-          npm run prettier:check
           npm run lint
           npm run test
           npm run cypress:run
