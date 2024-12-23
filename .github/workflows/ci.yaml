@@ -122,9 +122,14 @@ jobs:
     needs: build-and-push-docker
 
     steps:
+      - name: Setup SSH private key
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
       - name: Connect to AWS EC2 and Deploy Docker Image
         run: |
-          ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_SSH_KEY }} ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
             docker pull ${{ secrets.DOCKER_USERNAME }}/react-app:latest
             docker stop react-app || true
             docker rm react-app || true
