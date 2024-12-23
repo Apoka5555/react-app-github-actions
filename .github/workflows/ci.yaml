@@ -122,8 +122,9 @@ jobs:
     needs: build-and-push-docker
 
     steps:
-      - name: Setup SSH private key
+      - name: Set up SSH key
         run: |
+          mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
 
