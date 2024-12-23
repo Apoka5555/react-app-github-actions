@@ -20,7 +20,7 @@ on:
         default: 22.x
 
 jobs:
-  reusable:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -36,35 +36,10 @@ jobs:
 
       - name: Run ESLint
         id: js-lint
-        run: npx eslint src --ext js,ts,tsx -f json -o lint.json
+        run: npx eslint src --ext js,ts,tsx
 
-    #   - name: Annotate PR
-    #     if: failure() && steps.js-lint.conclusion == 'failure'
-    #     uses: actions/github-script@v7
-    #     with:
-    #       script: |
-    #         try {
-    #           const fs = require('node:fs');
-    #           const report = JSON.parse(fs.readFileSync('./lint.json', 'utf-8'));
+      - name: Run unit and integration tests
+        run: npm run test
 
-    #           report.flatMap(entry => entry.messages.map(message => {
-    #             core.error(message.message, {
-    #               title: message.ruleId,
-    #               file: entry.filePath.replace(`${process.env.GITHUB_WORKSPACE}/`, ''),
-    #               startLine: message.line,
-    #               endLine: message.endLine || message.line,
-    #               startColumn: message.column,
-    #               endColumn: message.endColumn || message.column
-    #             });
-    #           }));
-    #         } catch (error) {
-    #           core.error(`PR annotation failed with error: ${error}`);
-    #           core.setFailed(error);
-    #         }
-
-    #   - name: Archive linter results
-    #     id: archive-linter-results
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #       name: lint
-    #       path: ./lint.json
+      - name: Run E2E tests
+        run: npm run cypress:run
