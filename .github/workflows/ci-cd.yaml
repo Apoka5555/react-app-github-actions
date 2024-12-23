@@ -1,0 +1,33 @@
+name: run ci/cd
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      node-version:
+        description: Node version
+        type: choice
+        options:
+          - 21.x
+          - 22.x
+          - 23.x
+        default: 22.x
+
+jobs:
+  lint-and-tests:
+    name: Lint and Tests
+    uses: ./.github/workflows/run-linters-and-tests.yaml
+    with:
+      node-version: ${{ inputs.node-version }}
+
+  build-and-deploy:
+    needs: lint-and-tests
+    name: Build docker image and deploy to AWS
+    uses: ./.github/workflows/build-and-deploy.yaml
+    secrets:
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      ec2_ssh_key: ${{ secrets.EC2_SSH_KEY }}
+      ec2_public_ip: ${{ secrets.EC2_PUBLIC_IP }}

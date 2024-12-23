@@ -123,3 +123,5 @@ dist
 # IDE specific
 .idea/
 .DS_Store
+
+apoka_ec2_instance.pem
