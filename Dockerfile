@@ -27,3 +27,4 @@ EXPOSE 80
 
 # Step 10: Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
+

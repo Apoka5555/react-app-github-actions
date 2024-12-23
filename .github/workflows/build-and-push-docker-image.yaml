@@ -41,6 +41,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/react-app:latest
+          no-cache: true
 
   deploy-to-ec2:
     name: Deploy to AWS EC2
@@ -64,6 +65,6 @@ jobs:
               docker rm react-app
             fi
 
-            # Run the new container
+            docker pull ${{ secrets.DOCKER_USERNAME }}/react-app:latest
             docker run -d --name react-app -p 80:80 ${{ secrets.DOCKER_USERNAME }}/react-app:latest
           EOF
