@@ -34,11 +34,6 @@ jobs:
         id: js-lint
         run: npx eslint src --ext js,ts,tsx
 
-      - name: Run unit and integration tests
-        run: npm run test
-
-      - name: Run E2E tests
-        run: npm run cypress:run
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -55,6 +50,7 @@ jobs:
 
       - name: Run unit and integration tests
         run: npm run test
+
   e2e-tests:
     runs-on: ubuntu-latest
     steps:
