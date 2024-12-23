@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "CACHE_KEY=deps-node-modules-${{ hashFiles('package-lock.json') }}" >> "$GITHUB_OUTPUT"
 
-      - name: Download cached dependencies
+      - name: Cache Node Modules
         uses: actions/cache@v4
         if: ${{ inputs.use-cache }}
         id: cache
@@ -46,9 +46,21 @@ jobs:
           path: node_modules
           key: ${{ steps.cache-key.outputs.CACHE_KEY }}
 
+      - name: Cache Cypress Binary
+        uses: actions/cache@v4
+        if: ${{ inputs.use-cache }}
+        id: cache-cypress
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Install Cypress
+        if: steps.cache-cypress.outputs.cache-hit != 'true'
+        run: npx cypress install
 
   lint:
     runs-on: ubuntu-latest
@@ -66,7 +78,6 @@ jobs:
       #   run: npm ci
       - name: Restore Node Modules Cache
         uses: actions/cache@v4
-        if: ${{ inputs.use-cache }}
         with:
           path: node_modules
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
@@ -91,7 +102,6 @@ jobs:
       #   run: npm ci
       - name: Restore Node Modules Cache
         uses: actions/cache@v4
-        if: ${{ inputs.use-cache }}
         with:
           path: node_modules
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
@@ -115,10 +125,15 @@ jobs:
       #   run: npm ci
       - name: Restore Node Modules Cache
         uses: actions/cache@v4
-        if: ${{ inputs.use-cache }}
         with:
           path: node_modules
           key: ${{ needs.install-deps.outputs.deps-cache-key }}
+
+      - name: Restore Cypress Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ hashFiles('package-lock.json') }}
 
       - name: Run E2E tests
         run: npm run cypress:run
