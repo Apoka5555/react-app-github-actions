@@ -90,7 +90,7 @@ jobs:
 
       - name: Formatting, linting, tsc, and tests
         run: |
-          npm run lint
+          npx eslint src --ext js,ts,tsx -f json -o lint.json
           npm run test
           npm run cypress:run
 
