@@ -58,6 +58,10 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      - name: Run ESLint
+        id: js-lint
+        run: npx eslint src --ext js,ts,tsx -f json -o lint.json
+
       - name: Install Cypress
         if: steps.cache-cypress.outputs.cache-hit != 'true'
         run: npx cypress install
