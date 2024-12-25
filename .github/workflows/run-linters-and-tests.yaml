@@ -1,18 +1,11 @@
 name: run js linters and tests
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_call:
     inputs:
       node-version:
-        description: Node version
-        type: choice
-        options:
-          - 21.x
-          - 22.x
-          - 23.x
+        required: false
+        type: string
         default: 22.x
 
 jobs:
