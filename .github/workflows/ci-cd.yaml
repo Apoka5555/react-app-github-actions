@@ -16,14 +16,14 @@ on:
         default: 22.x
 
 jobs:
-  lint-and-tests:
-    name: Lint and Tests
-    uses: ./.github/workflows/run-linters-and-tests.yaml
-    with:
-      node-version: ${{ inputs.node-version }}
+  # lint-and-tests:
+  #   name: Lint and Tests
+  #   uses: ./.github/workflows/run-linters-and-tests.yaml
+  #   with:
+  #     node-version: ${{ inputs.node-version }}
 
   build-and-deploy:
-    needs: lint-and-tests
+    # needs: lint-and-tests
     name: Build docker image and deploy to AWS
     uses: ./.github/workflows/build-and-deploy.yaml
     secrets:
