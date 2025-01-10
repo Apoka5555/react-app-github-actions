@@ -33,7 +33,7 @@ function App() {
 
   return (
     <div className="lg:container lg mx-auto m-10">
-      <div>Simple react application with cypress</div>
+      <div>Simple react application with cypress NEW</div>
       {isAuthed ? (
         <Welcome
           username={username}
