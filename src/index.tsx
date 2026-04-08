@@ -14,7 +14,7 @@ root.render(
 );
 
 // Start a mock API server to handle auth requests
-worker.start({
+void worker.start({
   onUnhandledRequest: "bypass",
 });
 

@@ -1,0 +1,78 @@
+name: (reusable) run js tests
+
+on:
+  workflow_call:
+    inputs:
+      scope:
+        required: false
+        type: string
+        default: '@bifrost'
+      workspace:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  reusable:
+    runs-on: [self-hosted, linux, x64, bifrost]
+    steps:
+      - name: Create Github App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CINEMO_PENG_BOT_APP_ID }}
+          private-key: ${{ secrets.CINEMO_PENG_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: ${{ vars.ARTIFACTORY_NPM_REGISTRY_URL }}
+          scope: ${{ inputs.scope }}
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
+      
+      - name: Check if Playwright is configured
+        id: playwright-check
+        run: |
+          if [ -f "config/playwright.config.ts" ] || [ -f "test/playwright.config.ts" ]; then
+            echo "has-playwright=true" >> $GITHUB_OUTPUT
+          else
+            echo "has-playwright=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache Playwright browsers
+        if: steps.playwright-check.outputs.has-playwright == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-check.outputs.has-playwright == 'true'
+        run: npx playwright install chromium --with-deps
+
+      - name: Run tests
+        id: js-coverage
+        run: ${{ inputs.workspace != '' && format('npm run test --workspace={0}', inputs.workspace) || 'npm run test' }}
+
+      - name: Archive coverage results
+        id: archive-coverage-results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: ./coverage/

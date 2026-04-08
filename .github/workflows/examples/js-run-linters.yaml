@@ -1,0 +1,77 @@
+name: (reusable) run js linters
+
+on:
+  workflow_call:
+    inputs:
+      scope:
+        required: false
+        type: string
+        default: '@bifrost'
+
+jobs:
+  reusable:
+    runs-on: [self-hosted, linux, x64, bifrost]
+    steps:
+      - name: Create Github App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CINEMO_PENG_BOT_APP_ID }}
+          private-key: ${{ secrets.CINEMO_PENG_BOT_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: ${{ vars.ARTIFACTORY_NPM_REGISTRY_URL }}
+          scope: ${{ inputs.scope }}
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
+
+      - name: Run ESLint
+        id: js-lint
+        run: npx eslint src packages/*/src --no-error-on-unmatched-pattern --ext js,ts,tsx -f json -o lint.json
+
+      - name: Annotate PR
+        if: failure() && steps.js-lint.conclusion == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          script: |
+            try {
+              const fs = require('node:fs');
+              const report = JSON.parse(fs.readFileSync('./lint.json', 'utf-8'));
+
+              report.flatMap(entry => entry.messages.map(message => {
+                core.error(message.message, {
+                  title: message.ruleId,
+                  file: entry.filePath.replace(`${process.env.GITHUB_WORKSPACE}/`, ''),
+                  startLine: message.line,
+                  endLine: message.endLine || message.line,
+                  startColumn: message.column,
+                  endColumn: message.endColumn || message.column
+                });
+              }));
+            } catch (error) {
+              core.error(`PR annotation failed with error: ${error}`);
+              core.setFailed(error);
+            }
+
+      - name: Archive linter results
+        id: archive-linter-results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint
+          path: ./lint.json

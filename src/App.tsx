@@ -20,8 +20,8 @@ function App() {
         setUsername(creds.username);
       } else {
         if (res.status === 401) {
-          const { message } = await res.json();
-          setErrorMessage(message);
+          const data = (await res.json()) as { message: string };
+          setErrorMessage(data.message);
         } else {
           throw Error(`error during auth, status code: ${res.status}`);
         }
@@ -33,7 +33,7 @@ function App() {
 
   return (
     <div className="lg:container lg mx-auto m-10">
-      <div>Simple react application with cypress</div>
+      <div>Simple react application</div>
       {isAuthed ? (
         <Welcome
           username={username}
@@ -43,7 +43,10 @@ function App() {
           }}
         />
       ) : (
-        <LoginForm onLogin={handleLogin} errorMessage={errorMessage} />
+        <LoginForm
+          onLogin={(creds) => void handleLogin(creds)}
+          errorMessage={errorMessage}
+        />
       )}
     </div>
   );

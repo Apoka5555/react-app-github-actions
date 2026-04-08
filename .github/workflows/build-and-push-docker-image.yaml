@@ -1,0 +1,80 @@
+name: (reusable) build and push docker image
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile
+      context:
+        required: false
+        type: string
+        default: .
+      aws_region:
+        required: true
+        type: string
+      aws_ecr_repository:
+        required: true
+        type: string
+    outputs:
+      image_tag:
+        description: "Full image URI with tag"
+        value: ${{ jobs.reusable.outputs.image_tag }}
+    secrets:
+      aws_access_key_id:
+        required: true
+      aws_secret_access_key:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  reusable:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build-image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.aws_access_key_id }}
+          aws-secret-access-key: ${{ secrets.aws_secret_access_key }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Collect docker metadata
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ inputs.aws_ecr_repository }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.context }}/${{ inputs.dockerfile }}
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}
+
+      - name: Set image output
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ inputs.aws_ecr_repository }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:sha-${IMAGE_TAG::7}" >> $GITHUB_OUTPUT

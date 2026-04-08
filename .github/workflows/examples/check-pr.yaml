@@ -1,0 +1,57 @@
+name: Check PR
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/js-run-linters.yaml@main
+    secrets: inherit
+
+  test:
+    name: Test
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/js-run-tests.yaml@main
+    secrets: inherit
+
+  sonar:
+    needs: [lint, test]
+    name: Run Sonar quality gate
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/js-sonar-quality-gate.yaml@main
+    with:
+      sonar_project_key: 'web-bifrost'
+      sonar_project_name: 'web-bifrost'
+    secrets: inherit
+
+  build:
+    name: Build docker image
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/build-and-push-docker-image.yaml@main
+    with:
+      dockerfile: ./docker/Dockerfile
+    secrets:
+      bot_private_key: ${{ secrets.CINEMO_PENG_BOT_PRIVATE_KEY }}
+      build_args: |
+        ARTIFACTORY_NPM_REGISTRY_URL=${{ vars.ARTIFACTORY_NPM_REGISTRY_URL }}
+        ARTIFACTORY_TOKEN=${{ secrets.ARTIFACTORY_TOKEN }}
+
+  preview_config:
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/deploy-config.yaml@main
+    strategy:
+      matrix:
+        stage:
+          - dev
+          - int
+          - rc
+          - prod
+    with:
+      stage: ${{ matrix.stage }}
+      deployment_type: web
+      dry_run: true
+      global_config_version: ${{ vars.GLOBAL_CONFIG_VERSION }}
+    secrets: inherit

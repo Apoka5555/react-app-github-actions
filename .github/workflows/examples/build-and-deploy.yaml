@@ -1,0 +1,76 @@
+name: Build and deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'assets/**'
+      - 'docker/**'
+      - 'patches/**'
+      - 'static/**'
+      - 'test/**'
+      - '**/*.json'
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.scss'
+      - '**/*.css'
+      - '**/*.html'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_and_push:
+    name: Build and push docker image
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/build-and-push-docker-image.yaml@main
+    with:
+      aws_ecr_repository: ${{ github.event.repository.name }}
+      aws_nonprod_role_arn: ${{ vars.AWS_NONPROD_ROLE_ARN }}
+      aws_prod_role_arn: ${{ vars.AWS_PROD_ROLE_ARN }}
+      dockerfile: ./docker/Dockerfile
+    secrets:
+      bot_private_key: ${{ secrets.CINEMO_PENG_BOT_PRIVATE_KEY }}
+      build_args: |
+        ARTIFACTORY_NPM_REGISTRY_URL=${{ vars.ARTIFACTORY_NPM_REGISTRY_URL }}
+        ARTIFACTORY_TOKEN=${{ secrets.ARTIFACTORY_TOKEN }}
+
+  update_dev_env:
+    needs: build_and_push
+    if: ${{ github.ref_type != 'tag' }}
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/deploy-config.yaml@main
+    with:
+      stage: dev
+      deployment_type: web
+      regions: '["euc1","usw2"]'
+      image_tag: ${{ needs.build_and_push.outputs.image_tags }}
+      global_config_version: ${{ vars.GLOBAL_CONFIG_VERSION }}
+    secrets: inherit
+
+  update_non_dev_env:
+    needs: build_and_push
+    if: ${{ github.ref_type == 'tag' }}
+    uses: Cinemo-Product-Engineering/workflow-reusable/.github/workflows/deploy-config.yaml@main
+    with:
+      stage: >-
+        ${{
+        (endsWith(github.ref_name, 'prod') && 'prod') ||
+        (endsWith(github.ref_name, 'rc') && 'rc') ||
+        'int'
+        }}
+      regions: >-
+        ${{
+        (endsWith(github.ref_name, 'rc') && '["euc1","usw2","apse1"]') ||
+        (endsWith(github.ref_name, 'prod') && '["euc1","usw2","apse1"]') ||
+        '["euc1","usw2"]'
+        }}
+      deployment_type: web
+      image_tag: ${{ needs.build_and_push.outputs.image_tags }}
+      global_config_version: ${{ vars.GLOBAL_CONFIG_VERSION }}
+    secrets: inherit

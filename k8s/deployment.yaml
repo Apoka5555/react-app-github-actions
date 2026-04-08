@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: react-app
+  labels:
+    app: react-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: react-app
+  template:
+    metadata:
+      labels:
+        app: react-app
+    spec:
+      imagePullSecrets:
+        - name: ecr-secret
+      containers:
+        - name: react-app
+          image: IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
